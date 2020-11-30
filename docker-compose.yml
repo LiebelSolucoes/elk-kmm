@@ -1,0 +1,71 @@
+version: '2'
+services:
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.10.0
+    environment:
+      ELASTIC_HOST: elasticsearch:9200
+      XPACK_SECURITY_ENABLED: 'true'
+      XPACK_REPORTING_ENABLED: 'false'
+      XPACK_MONITORING_ENABLED: 'true'
+    stdin_open: true
+    volumes:
+    - /var/src/logstash/usr/share/logstash/logstash.yml:/usr/share/logstash/logstash.yml
+    - /var/src/logstash/usr/share/logstash/pipeline/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    - /usr/share/logstash/pipeline/logstash.conf/usr/share/logstash/pipeline/patterns:/usr/share/logstash/pipeline/patterns
+    tty: true
+    links:
+    - elasticsearch:elasticsearch
+    ports:
+    - 5040:5040/tcp
+    command:
+    - sh
+    - -c
+    - which logstash-plugin && logstash-plugin install logstash-filter-elapsed && logstash --java-execution false -f /usr/share/logstash/pipeline/logstash.conf
+    labels:
+      io.rancher.container.pull_image: always
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.0
+    environment:
+      discovery.type: single-node
+      XPACK_REPORTING_ENABLED: 'false'
+      XPACK_MONITORING_ENABLED: 'true'
+      ELASTIC_PASSWORD: V1129power!
+      cluster.name: dockercluster
+      node.name: node-master
+      bootstrap.memory_lock: 'true'
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      xpack.security.enabled: 'true'
+      xpack.security.transport.ssl.enabled: 'true'
+    stdin_open: true
+    volumes:
+    - /var/src/elasticsearch//usr/share/elasticsearch/data:/usr/share/elasticsearch/data
+    tty: true
+    ports:
+    - 9200:9200/tcp
+    - 9300:9300/tcp
+    user: root
+    labels:
+      io.rancher.container.pull_image: always
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.0
+    environment:
+      XPACK_SECURITY_ENABLED: 'true'
+      XPACK_REPORTING_ENABLED: 'false'
+      XPACK_MONITORING_ENABLED: 'true'
+      SERVER_NAME: kibana
+      SERVER_HOST: 0.0.0.0
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: mdkoipbhusjswmitvahnssmlelvusade
+      ELASTICSEARCH_USERNAME: elastic
+      ELASTICSEARCH_PASSWORD: V1129power!
+    stdin_open: true
+    volumes:
+    - /var/src/kibana/usr/share/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
+    tty: true
+    links:
+    - elasticsearch:elasticsearch
+    ports:
+    - 5601:5601/tcp
+    labels:
+      io.rancher.container.pull_image: always
