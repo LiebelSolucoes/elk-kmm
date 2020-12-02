@@ -4,7 +4,8 @@
       "index": {
         "number_of_replicas": "1",
         "lifecycle": {
-          "name": "logstash-policy"
+          "name": "logstash-policy",
+		  "rollover_alias": "logstash"
         }
       }
     },
